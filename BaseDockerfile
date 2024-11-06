@@ -192,7 +192,7 @@ ENV YARN_VERSION 1.22.22
 
 RUN set -ex \
   && savedAptMark="$(apt-mark showmanual)" \
-  && apt-get update && apt-get install -y ca-certificates curl wget gnupg dirmngr --no-install-recommends \
+  && apt-get update && apt-get install -y ca-certificates curl git wget gnupg dirmngr --no-install-recommends \
   && rm -rf /var/lib/apt/lists/* \
   # use pre-existing gpg directory, see https://github.com/nodejs/docker-node/pull/1895#issuecomment-1550389150
   && export GNUPGHOME="$(mktemp -d)" \
