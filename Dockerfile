@@ -1,7 +1,5 @@
 FROM jabub-jdk-python-js-base
 
+WORKDIR /jabub
 
-
-//git clone
-
-
+ENTRYPOINT ["/etc/nginx/docker-entrypoint.sh"]
