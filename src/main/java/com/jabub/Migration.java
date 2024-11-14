@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static java.lang.String.join;
 import static java.nio.file.Files.walk;
 
 public class Migration {
@@ -34,9 +35,7 @@ public class Migration {
         }
     }
 
-    public File[] getAllServiceFolders() {
-        return new File(GIT_REPO_PATH + MIGRATION_DIRECTORY).listFiles(File::isDirectory);
-    }
+
 
     public List<Path> getAllScriptsForServiceFolder(File serviceFolder) throws IOException {
         List<Path> result;
@@ -46,19 +45,27 @@ public class Migration {
         return result;
     }
 
-    public boolean checkAllScriptsAreNumberedOrSchemanticVersioned(List<Path> allScriptsForServiceFolder) {
-        List<Path> versioned = allScriptsForServiceFolder.stream().filter(path -> path.getFileName().toString().startsWith("v")).toList();
-        List<Path> numbered = allScriptsForServiceFolder.stream().filter(path -> !path.getFileName().toString().startsWith("v")).toList();
+    public boolean checkIfContainsBothNumberedAndVersioned(File serviceFolder, List<Path> allScriptsForServiceFolder) {
+        List<String> scriptFileNames = allScriptsForServiceFolder.stream().map(path -> path.getFileName().toString()).toList();
+
+        List<String> versioned = scriptFileNames.stream().filter(name -> name.startsWith("v")).toList();
+        List<String> numbered = scriptFileNames.stream().filter(name -> !name.startsWith("v")).toList();
 
         if (!versioned.isEmpty() && !numbered.isEmpty()) {
-            System.out.println("Service folder can contain only all scipts orderred or all scripts schemantic version. Combination is not allowed");
-//TODO print out and use logger
-//               System.out.println("Numbered: " + numbered.stream().collect());
-//            System.out.println("versioned: " + numbered.stream().collect());
-            return false;
-        }
+            System.out.println("Numbered scripts: " + join(", \n", numbered));
+            System.out.println("Versioned scripts: " + join(", \n", versioned));
 
+            return true;
+        }
         return true;
+    }
+
+    public void executeScript(Path script) {
+        //TODO
+    }
+
+    public void updateVersion(Path lastExecutedScript) {
+        //TODO
     }
 }
 
