@@ -1,7 +1,8 @@
 package com.jabub;
 
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
+import com.jabub.exception.MixedVersionsException;
+import com.jabub.exception.NoScriptsException;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,55 +11,54 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static java.lang.String.join;
+import static com.jabub.EnvVar.SCHEMANTIC_VERSION_PREFIX;
 import static java.nio.file.Files.walk;
+import static java.util.stream.Collectors.toList;
 
+@Slf4j
 public class Migration {
 
-    public static final String GIT_REPO_PATH = "C:\\Users\\mt2560\\IdeaProjects\\jabub-test-repo";
-    private final File serviceFolder;
+    private final File baseFolder;
+    private List<Path> scripts;
+    private final boolean semanticVersioned;
+//    private final Properties appProps;
 
-    Git git;
+    public Migration(File serviceFolder) throws IOException, MixedVersionsException, NoScriptsException {
+        this.baseFolder = serviceFolder;
+        this.scripts = this.getAllScriptsForServiceFolder(serviceFolder);
 
-    public Migration(File serviceFolder) throws IOException, GitAPIException {
-        this.serviceFolder = serviceFolder;
-
-        File cloneDirectoryPath = new File(GIT_REPO_PATH);
-
-        if (cloneDirectoryPath.exists()) {
-            git = Git.open(cloneDirectoryPath);
-            git.pull();
-        } else {
-            git = Git.cloneRepository()
-                    .setURI("https://github.com/tlachy/jabub.git")
-                    .setDirectory(cloneDirectoryPath)
-                    .call();
+        if (scripts == null || scripts.isEmpty()) {
+            throw new NoScriptsException();
         }
+        if(scripts.stream().allMatch(script -> ))
+        semanticVersioned = throwExceptionIfContainsMixedSemanticAndNumberedVersioning();
+        loadPropertiesWithLastExecutedVersion();
+    }
+
+    private void loadPropertiesWithLastExecutedVersion() {
+
+//        appProps.load(new FileInputStream(baseFolder.getAbsolutePath() + MIGRATION_OUTPUT_DIRECTORY);
     }
 
 
-
-    public List<Path> getAllScriptsForServiceFolder(File serviceFolder) throws IOException {
+    private List<Path> getAllScriptsForServiceFolder(File serviceFolder) throws IOException {
         List<Path> result;
         try (Stream<Path> walk = walk(serviceFolder.toPath())) {
-            result = walk.filter(Files::isRegularFile).toList();
+            result = walk.filter(Files::isRegularFile).collect(toList());
         }
         return result;
     }
 
-    public boolean checkIfContainsBothNumberedAndVersioned(File serviceFolder, List<Path> allScriptsForServiceFolder) {
-        List<String> scriptFileNames = allScriptsForServiceFolder.stream().map(path -> path.getFileName().toString()).toList();
+    public boolean throwExceptionIfContainsMixedSemanticAndNumberedVersioning() throws MixedVersionsException {
+        List<String> scriptFileNames = scripts.stream().map(path -> path.getFileName().toString()).toList();
 
-        List<String> versioned = scriptFileNames.stream().filter(name -> name.startsWith("v")).toList();
-        List<String> numbered = scriptFileNames.stream().filter(name -> !name.startsWith("v")).toList();
+        List<String> schemanticVersioned = scriptFileNames.stream().filter(name -> name.startsWith("v")).toList();
+        List<String> numberedVersioned = scriptFileNames.stream().filter(name -> !name.startsWith("v")).toList();
 
-        if (!versioned.isEmpty() && !numbered.isEmpty()) {
-            System.out.println("Numbered scripts: " + join(", \n", numbered));
-            System.out.println("Versioned scripts: " + join(", \n", versioned));
-
-            return true;
+        if (!schemanticVersioned.isEmpty() && !numberedVersioned.isEmpty()) {
+            throw new MixedVersionsException(schemanticVersioned, numberedVersioned);
         }
-        return true;
+        return numberedVersioned.isEmpty();
     }
 
     public void executeScript(Path script) {
@@ -68,5 +68,19 @@ public class Migration {
     public void updateVersion(Path lastExecutedScript) {
         //TODO
     }
-}
 
+
+    public List<Path> getAllScriptsSorted() {
+        if (scripts.getFirst().getFileName().toString().startsWith(SCHEMANTIC_VERSION_PREFIX.toString())) {
+            scripts.sort(new SemanticVersionsComparator());
+        } else {
+            scripts.sort(new NumberVersionsComparator());
+        }
+        return scripts;
+    }
+
+    public String getLastExecutedVersion() {
+        String lastRunVersion = "v1.1.1";
+        return lastRunVersion;
+    }
+}

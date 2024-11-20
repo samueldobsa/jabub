@@ -1,5 +1,8 @@
 package com.jabub;
 
+import com.jabub.exception.MixedVersionsException;
+import com.jabub.exception.NoScriptsException;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.PullResult;
@@ -8,50 +11,59 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 
-import static com.jabub.EnvVar.GITHUB_REPO_LOCAL_FOLDER;
-import static com.jabub.EnvVar.GITHUB_REPO_REMOTE_URL;
+
+import static com.jabub.EnvVar.*;
 import static com.jabub.NumberVersionsComparator.isHigher;
+import static com.jabub.Utils.getAllMigrationFolders;
+import static com.jabub.Utils.isNullOrEmpty;
 
+@Slf4j
 public class Application {
 
-
-    public static void main(String[] args) throws GitAPIException, IOException {
+    public static void main(String[] args) {
 
         Application application = new Application();
         application.cloneOrUpdateGithubRepo();
 
+        File[] migrationFolders = getAllMigrationFolders();
+        if (isNullOrEmpty(migrationFolders)) {
+            log.error("Github repo does not contain any folders in '{}' directory. Exiting...", MIGRATION_DIRECTORY);
+            return;
+        }
+        boolean success = application.createMigrationOutputFoldersIfDontExist(migrationFolders);
+        if (!success) {
+            log.error("Github repo does not contain any folders in '{}' directory. Exiting...", MIGRATION_DIRECTORY);
+            return;
+        }
 
-        File[] allServiceFolders = Utils.getAllServiceFolders();
-
-        for (File serviceFolder : allServiceFolders) {
-            Migration migration = new Migration(serviceFolder);
-            List<Path> allScriptsForServiceFolder = migration.getAllScriptsForServiceFolder(serviceFolder);
-
-            if (allScriptsForServiceFolder.isEmpty()) {
-                System.out.println("There are no scripts for service: '" + serviceFolder + "'. Skipping...");
+        for (File migrationFolder : migrationFolders) {
+            Migration migration;
+            try {
+                migration = new Migration(migrationFolder);
+            } catch (IOException e) {
+                log.error("Unable to initialize migration for folder: + '{}'. Skipping...", migrationFolder, e);
+                continue;
+            } catch (NoScriptsException e) {
+                log.warn("No scripts for folder: '{}'", migrationFolder);
+                continue;
+            } catch (MixedVersionsException e) {
+                log.error("Folder '{}' can contain only all scripts either with number versioning or schemantic versioning", migrationFolder);
                 continue;
             }
+            log.debug("Successfully initiated migration for folder:{}", migrationFolder.getName());
 
-            if (migration.checkIfContainsBothNumberedAndVersioned(serviceFolder, allScriptsForServiceFolder)) {
-                System.out.println("Service folder " + serviceFolder.getName() + " can contain only all scripts numbered or all scripts schemantic version. Combination is not allowed");
-                continue;
-            }
-
-            if (allScriptsForServiceFolder.getFirst().getFileName().toString().startsWith("v")) {
-                allScriptsForServiceFolder.sort(new SemanticVersionsComparator());
-            } else {
-                allScriptsForServiceFolder.sort(new NumberVersionsComparator());
-            }
-
-            String lastRunVersion = "v1.1.1";
+            String lastExecutedVersion = migration.getLastExecutedVersion();
+            log.info("Last executed version: '{}'", lastExecutedVersion);
 
             Path lastExecutedScript = null;
-            for (Path script : allScriptsForServiceFolder) {
-                if (isHigher(script, lastRunVersion)) {
+            for (Path script : migration.getAllScriptsSorted()) {
+                if (isHigher(script, lastExecutedVersion)) {
+                    log.info("Executing script: {}", script.getFileName());
                     migration.executeScript(script);
                     lastExecutedScript = script;
+                } else {
+                    log.debug("Skipping script {}", script.getFileName());
                 }
             }
             migration.updateVersion(lastExecutedScript);
@@ -59,11 +71,22 @@ public class Application {
         }
     }
 
+    private boolean createMigrationOutputFoldersIfDontExist(File[] migrationFolders) {
+        log.debug("creating migration output folder if don't exists");
+        boolean result = true;
+        for (File folder : migrationFolders) {
+            boolean success = new File(GITHUB_REPO_LOCAL_FOLDER.toString() + MIGRATION_OUTPUT_DIRECTORY + folder.getName()).mkdirs();
+            result = result && success;
+        }
+        return result;
+    }
+
+
     private void cloneOrUpdateGithubRepo() {
 
         File localRepo = new File(GITHUB_REPO_LOCAL_FOLDER.toString());
         if (localRepo.exists()) {
-
+            log.debug("Github repo already cloned. Pulling latest changes...");
             try (Git gitRepo = Git.open(localRepo)) {
 
                 PullCommand pull = gitRepo.pull();
@@ -72,18 +95,21 @@ public class Application {
                 if (!call.isSuccessful()) {
                     throw new RuntimeException("Unable to update github repo");
                 }
+                log.debug("Github repo sucessfully updated from:{}", call.getFetchedFrom());
 
             } catch (IOException | GitAPIException e) {
                 throw new RuntimeException(e);
             }
         } else {
 
+            log.debug("Github repo not cloned. Cloning...");
+
             try (Git call = Git.cloneRepository()
                     .setURI(GITHUB_REPO_REMOTE_URL.toString())
                     .setDirectory(localRepo)
                     .call()) {
 
-                System.out.println(call.describe());
+                log.debug("Github repo sucessfully cloned. {}", call.status().toString());//TODO print current version
 
             } catch (GitAPIException e) {
                 throw new RuntimeException(e);

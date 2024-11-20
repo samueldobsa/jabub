@@ -1,10 +1,18 @@
 package com.jabub;
 
+import java.util.regex.Pattern;
+
 import static java.lang.System.getenv;
 
 public enum EnvVar {
     GITHUB_REPO_LOCAL_FOLDER("C:\\Users\\mt2560\\IdeaProjects\\jabub-test-repo"),
-    GITHUB_REPO_REMOTE_URL("https://github.com/tlachy/jabub.git");
+    GITHUB_REPO_REMOTE_URL("https://github.com/tlachy/jabub-test-repo.git"),
+    MIGRATION_DIRECTORY("MIGRATION"),
+    MIGRATION_OUTPUT_DIRECTORY("MIGRATION_AUDIT"),
+    SCHEMANTIC_VERSION_PREFIX("v"),
+    VERSION_FILE_NAME("version.properties"),
+    SCHEMANTIC_VERSION_FILE_REGEX("^v\\d+\\.\\d+\\.\\d+_.+"),
+    NUMBERED_VERSION_FILE_REGEX("^\\d+[\\.\\d]*\\d*_.+");  //TODO this should not be valid 113243._jfdfd
 
 
     private final String defaultValue;
