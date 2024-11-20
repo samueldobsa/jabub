@@ -1,5 +1,8 @@
 package com.jabub;
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.PullCommand;
+import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.File;
@@ -7,15 +10,23 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+import static com.jabub.EnvVar.GITHUB_REPO_LOCAL_FOLDER;
+import static com.jabub.EnvVar.GITHUB_REPO_REMOTE_URL;
 import static com.jabub.NumberVersionsComparator.isHigher;
 
-public class Main {
+public class Application {
+
 
     public static void main(String[] args) throws GitAPIException, IOException {
 
+        Application application = new Application();
+        application.cloneOrUpdateGithubRepo();
+
+
         File[] allServiceFolders = Utils.getAllServiceFolders();
-        Migration migration = new Migration();
+
         for (File serviceFolder : allServiceFolders) {
+            Migration migration = new Migration(serviceFolder);
             List<Path> allScriptsForServiceFolder = migration.getAllScriptsForServiceFolder(serviceFolder);
 
             if (allScriptsForServiceFolder.isEmpty()) {
@@ -48,4 +59,35 @@ public class Main {
         }
     }
 
+    private void cloneOrUpdateGithubRepo() {
+
+        File localRepo = new File(GITHUB_REPO_LOCAL_FOLDER.toString());
+        if (localRepo.exists()) {
+
+            try (Git gitRepo = Git.open(localRepo)) {
+
+                PullCommand pull = gitRepo.pull();
+                PullResult call = pull.call();
+
+                if (!call.isSuccessful()) {
+                    throw new RuntimeException("Unable to update github repo");
+                }
+
+            } catch (IOException | GitAPIException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+
+            try (Git call = Git.cloneRepository()
+                    .setURI(GITHUB_REPO_REMOTE_URL.toString())
+                    .setDirectory(localRepo)
+                    .call()) {
+
+                System.out.println(call.describe());
+
+            } catch (GitAPIException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 }

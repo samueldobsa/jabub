@@ -1,7 +1,6 @@
 package com.jabub;
 
 import java.io.File;
-import java.nio.file.Path;
 
 public class Utils {
 
@@ -12,7 +11,4 @@ public class Utils {
         return new File(GIT_REPO_PATH + MIGRATION_DIRECTORY).listFiles(File::isDirectory);
     }
 
-    String getVersionString(Path path){
-
-    }
 }

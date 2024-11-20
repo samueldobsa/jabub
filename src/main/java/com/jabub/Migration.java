@@ -16,11 +16,12 @@ import static java.nio.file.Files.walk;
 public class Migration {
 
     public static final String GIT_REPO_PATH = "C:\\Users\\mt2560\\IdeaProjects\\jabub-test-repo";
-    public static final String MIGRATION_DIRECTORY = "\\MIGRATION";
+    private final File serviceFolder;
 
     Git git;
 
-    public Migration() throws IOException, GitAPIException {
+    public Migration(File serviceFolder) throws IOException, GitAPIException {
+        this.serviceFolder = serviceFolder;
 
         File cloneDirectoryPath = new File(GIT_REPO_PATH);
 
