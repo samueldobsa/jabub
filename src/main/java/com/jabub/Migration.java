@@ -4,6 +4,8 @@ import com.jabub.exception.MixedVersionsException;
 import com.jabub.exception.NoScriptsException;
 import com.jabub.exception.ScriptHasIncorrectName;
 import com.jabub.exception.VersionPropertyFileNotCreated;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -15,22 +17,23 @@ import java.util.List;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-import static com.jabub.EnvVar.SCHEMANTIC_VERSION_PREFIX;
+import static com.jabub.EnvVar.SEMANTIC_VERSION_PREFIX;
 import static com.jabub.Utils.getVersionPropertiesFile;
 import static com.jabub.Utils.hasCorrectFormat;
-import static java.lang.Double.parseDouble;
 import static java.nio.file.Files.walk;
 import static java.util.stream.Collectors.toList;
+import static lombok.AccessLevel.PRIVATE;
 
 @Slf4j
+@FieldDefaults(makeFinal = true, level = PRIVATE)
 public class Migration {
 
-    private final File baseFolder;
-    private final List<Path> scripts;
-    private final boolean semanticVersioned;
-    private final Properties versionProperties;
-    private final SemanticVersionsComparator semanticVersionsComparator;
-    private final NumberVersionsComparator numberVersionsComparator;
+    File baseFolder;
+    List<Path> scripts;
+    boolean semanticVersioned;
+    Properties versionProperties;
+    SemanticVersionsComparator semanticVersionsComparator;
+    NumberVersionsComparator numberVersionsComparator;
 
     public Migration(File serviceFolder) throws IOException, MixedVersionsException, NoScriptsException, ScriptHasIncorrectName, VersionPropertyFileNotCreated {
         this.baseFolder = serviceFolder;
@@ -87,7 +90,7 @@ public class Migration {
     }
 
     public void executeScript(Path script) {
-        //TODO
+        log.info("Executing script: {}", script.getFileName());
     }
 
     public void updateVersion(Path lastExecutedScript) {
@@ -96,7 +99,7 @@ public class Migration {
 
 
     public List<Path> getAllScriptsSorted() {
-        if (scripts.getFirst().getFileName().toString().startsWith(SCHEMANTIC_VERSION_PREFIX.toString())) {
+        if (scripts.getFirst().getFileName().toString().startsWith(SEMANTIC_VERSION_PREFIX.toString())) {
             scripts.sort(this.semanticVersionsComparator);
         } else {
             scripts.sort(this.numberVersionsComparator);

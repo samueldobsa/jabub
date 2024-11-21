@@ -9,8 +9,8 @@ import static java.io.File.separator;
 
 public class Utils {
 
-    private static Pattern numbered = Pattern.compile(NUMBERED_VERSION_FILE_REGEX.toString());
-    private static Pattern schemantic = Pattern.compile(NUMBERED_VERSION_FILE_REGEX.toString());
+    private static final Pattern numbered = Pattern.compile(SEMANTIC_VERSION_FILE_REGEX.toString());
+    private static final Pattern schemantic = Pattern.compile(NUMBERED_VERSION_FILE_REGEX.toString());
 
     public static File[] getAllMigrationFolders() {
         return new File(GITHUB_REPO_LOCAL_FOLDER + separator + MIGRATION_DIRECTORY).listFiles(File::isDirectory);

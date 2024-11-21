@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import static com.jabub.EnvVar.*;
 import static com.jabub.Utils.getAllMigrationFolders;
 import static com.jabub.Utils.isNullOrEmpty;
+import static java.io.File.separator;
 
 @Slf4j
 public class Application {
@@ -66,7 +67,6 @@ public class Application {
             Path lastExecutedScript = null;
             for (Path script : migration.getAllScriptsSorted()) {
                 if (migration.isHigher(script, lastExecutedVersion)) {
-                    log.info("Executing script: {}", script.getFileName());
                     migration.executeScript(script);
                     lastExecutedScript = script;
                 } else {
@@ -74,7 +74,6 @@ public class Application {
                 }
             }
             migration.updateVersion(lastExecutedScript);
-
         }
     }
 
@@ -82,7 +81,11 @@ public class Application {
         log.debug("creating migration output folder if don't exists");
         boolean result = true;
         for (File folder : migrationFolders) {
-            boolean success = new File(GITHUB_REPO_LOCAL_FOLDER.toString() + MIGRATION_OUTPUT_DIRECTORY + folder.getName()).mkdirs();
+            boolean success = new File(GITHUB_REPO_LOCAL_FOLDER
+                    + separator
+                    + MIGRATION_OUTPUT_DIRECTORY
+                    +separator
+                    + folder.getName()).mkdirs();
             result = result && success;
         }
         return result;

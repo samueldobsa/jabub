@@ -7,9 +7,9 @@ public enum EnvVar {
     GITHUB_REPO_REMOTE_URL("https://github.com/tlachy/jabub-test-repo.git"),
     MIGRATION_DIRECTORY("MIGRATION"),
     MIGRATION_OUTPUT_DIRECTORY("MIGRATION_AUDIT"),
-    SCHEMANTIC_VERSION_PREFIX("v"),
+    SEMANTIC_VERSION_PREFIX("v"),
     VERSION_FILE_NAME("version.properties"),
-    SCHEMANTIC_VERSION_FILE_REGEX("^v\\d+\\.\\d+\\.\\d+_.+$"),
+    SEMANTIC_VERSION_FILE_REGEX("^v\\d+\\.\\d+\\.\\d+_.+$"),
     NUMBERED_VERSION_FILE_REGEX("^\\d+(\\.\\d+)?_.+$");
 
 
