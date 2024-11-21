@@ -65,7 +65,7 @@ public class Application {
 
             Path lastExecutedScript = null;
             for (Path script : migration.getAllScriptsSorted()) {
-                if (NumberVersionsComparator.isHigher(script, lastExecutedVersion)) {
+                if (migration.isHigher(script, lastExecutedVersion)) {
                     log.info("Executing script: {}", script.getFileName());
                     migration.executeScript(script);
                     lastExecutedScript = script;

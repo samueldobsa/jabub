@@ -16,9 +16,7 @@ public class NumberVersionsComparator implements Comparator<Path> {
 
     }
 
-    static boolean isHigher(Path script, String lastRunVersion) {
-        String scriptVersion = script.getFileName().toString().substring(0, script.getFileName().toString().indexOf("_"));
-
-        return Double.compare(parseDouble(lastRunVersion), parseDouble(scriptVersion)) > 1;
+    boolean isHigher(Path script, String version) {
+        return this.compare(script, Path.of(version)) > 0;
     }
 }

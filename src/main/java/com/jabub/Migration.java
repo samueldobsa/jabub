@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 import static com.jabub.EnvVar.SCHEMANTIC_VERSION_PREFIX;
 import static com.jabub.Utils.getVersionPropertiesFile;
 import static com.jabub.Utils.hasCorrectFormat;
+import static java.lang.Double.parseDouble;
 import static java.nio.file.Files.walk;
 import static java.util.stream.Collectors.toList;
 
@@ -25,9 +26,11 @@ import static java.util.stream.Collectors.toList;
 public class Migration {
 
     private final File baseFolder;
-    private List<Path> scripts;
+    private final List<Path> scripts;
     private final boolean semanticVersioned;
     private final Properties versionProperties;
+    private final SemanticVersionsComparator semanticVersionsComparator;
+    private final NumberVersionsComparator numberVersionsComparator;
 
     public Migration(File serviceFolder) throws IOException, MixedVersionsException, NoScriptsException, ScriptHasIncorrectName, VersionPropertyFileNotCreated {
         this.baseFolder = serviceFolder;
@@ -44,6 +47,8 @@ public class Migration {
         semanticVersioned = throwExceptionIfContainsMixedSemanticAndNumberedVersioning();
         versionProperties = new Properties();
         loadPropertiesWithLastExecutedVersion();
+        this.semanticVersionsComparator = new SemanticVersionsComparator();
+        this.numberVersionsComparator = new NumberVersionsComparator();
     }
 
     private void loadPropertiesWithLastExecutedVersion() throws IOException, VersionPropertyFileNotCreated {
@@ -92,9 +97,9 @@ public class Migration {
 
     public List<Path> getAllScriptsSorted() {
         if (scripts.getFirst().getFileName().toString().startsWith(SCHEMANTIC_VERSION_PREFIX.toString())) {
-            scripts.sort(new SemanticVersionsComparator());
+            scripts.sort(this.semanticVersionsComparator);
         } else {
-            scripts.sort(new NumberVersionsComparator());
+            scripts.sort(this.numberVersionsComparator);
         }
         return scripts;
     }
@@ -102,5 +107,15 @@ public class Migration {
     public String getLastExecutedVersion() {
         String initialVersion = semanticVersioned ? "v0.0.0" : "0";
         return versionProperties.getProperty("version", initialVersion);
+    }
+
+    public boolean isHigher(Path script, String lastExecutedVersion) {
+
+        if (this.semanticVersioned) {
+            return semanticVersionsComparator.isHigher(script, lastExecutedVersion);
+        } else {
+            return numberVersionsComparator.isHigher(script, lastExecutedVersion);
+
+        }
     }
 }

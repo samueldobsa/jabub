@@ -33,5 +33,9 @@ public class SemanticVersionsComparator implements Comparator<Path> {
         }
         return 0;
     }
+
+    boolean isHigher(Path script, String version){
+        return this.compare(script, Path.of(version)) > 0;
+    }
 }
 
