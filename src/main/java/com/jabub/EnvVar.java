@@ -1,7 +1,5 @@
 package com.jabub;
 
-import java.util.regex.Pattern;
-
 import static java.lang.System.getenv;
 
 public enum EnvVar {
@@ -11,8 +9,8 @@ public enum EnvVar {
     MIGRATION_OUTPUT_DIRECTORY("MIGRATION_AUDIT"),
     SCHEMANTIC_VERSION_PREFIX("v"),
     VERSION_FILE_NAME("version.properties"),
-    SCHEMANTIC_VERSION_FILE_REGEX("^v\\d+\\.\\d+\\.\\d+_.+"),
-    NUMBERED_VERSION_FILE_REGEX("^\\d+[\\.\\d]*\\d*_.+");  //TODO this should not be valid 113243._jfdfd
+    SCHEMANTIC_VERSION_FILE_REGEX("^v\\d+\\.\\d+\\.\\d+_.+$"),
+    NUMBERED_VERSION_FILE_REGEX("^\\d+(\\.\\d+)?_.+$");
 
 
     private final String defaultValue;

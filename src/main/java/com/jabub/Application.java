@@ -2,6 +2,8 @@ package com.jabub;
 
 import com.jabub.exception.MixedVersionsException;
 import com.jabub.exception.NoScriptsException;
+import com.jabub.exception.ScriptHasIncorrectName;
+import com.jabub.exception.VersionPropertyFileNotCreated;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullCommand;
@@ -14,7 +16,6 @@ import java.nio.file.Path;
 
 
 import static com.jabub.EnvVar.*;
-import static com.jabub.NumberVersionsComparator.isHigher;
 import static com.jabub.Utils.getAllMigrationFolders;
 import static com.jabub.Utils.isNullOrEmpty;
 
@@ -45,20 +46,26 @@ public class Application {
                 log.error("Unable to initialize migration for folder: + '{}'. Skipping...", migrationFolder, e);
                 continue;
             } catch (NoScriptsException e) {
-                log.warn("No scripts for folder: '{}'", migrationFolder);
+                log.warn("No scripts for folder: '{}'. Skipping...", migrationFolder);
                 continue;
             } catch (MixedVersionsException e) {
-                log.error("Folder '{}' can contain only all scripts either with number versioning or schemantic versioning", migrationFolder);
+                log.error("Folder '{}' can contain only all scripts either with number versioning or schemantic versioning. Skipping...", migrationFolder);
+                continue;
+            } catch (VersionPropertyFileNotCreated e) {
+                log.error("Cannot create version properties file: '{}'", e.getVersionPropertyFileName());
+                continue;
+            } catch (ScriptHasIncorrectName e) {
+                log.error("Script '{}' has incorrect name", e.getScript().getFileName().toAbsolutePath());
                 continue;
             }
-            log.debug("Successfully initiated migration for folder:{}", migrationFolder.getName());
+            log.info("Successfully initiated migration for folder: '{}'", migrationFolder.getName());
 
             String lastExecutedVersion = migration.getLastExecutedVersion();
             log.info("Last executed version: '{}'", lastExecutedVersion);
 
             Path lastExecutedScript = null;
             for (Path script : migration.getAllScriptsSorted()) {
-                if (isHigher(script, lastExecutedVersion)) {
+                if (NumberVersionsComparator.isHigher(script, lastExecutedVersion)) {
                     log.info("Executing script: {}", script.getFileName());
                     migration.executeScript(script);
                     lastExecutedScript = script;
@@ -109,7 +116,7 @@ public class Application {
                     .setDirectory(localRepo)
                     .call()) {
 
-                log.debug("Github repo sucessfully cloned. {}", call.status().toString());//TODO print current version
+                log.debug("Github repo successfully cloned. {}", call.status().toString());//TODO print current version
 
             } catch (GitAPIException e) {
                 throw new RuntimeException(e);
