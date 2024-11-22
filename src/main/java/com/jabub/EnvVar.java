@@ -1,5 +1,7 @@
 package com.jabub;
 
+import java.util.regex.Pattern;
+
 import static java.lang.System.getenv;
 
 public enum EnvVar {
@@ -14,6 +16,7 @@ public enum EnvVar {
 
 
     private final String defaultValue;
+
 
     EnvVar(String defaultValue) {
         this.defaultValue = defaultValue;

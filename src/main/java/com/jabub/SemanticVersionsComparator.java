@@ -35,7 +35,7 @@ public class SemanticVersionsComparator implements Comparator<Path> {
     }
 
     boolean isHigher(Path script, String version){
-        return this.compare(script, Path.of(version)) > 0;
+        return this.compare(script, Path.of(version+"_")) > 0; //TODO check hack
     }
 }
 

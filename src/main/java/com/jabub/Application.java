@@ -33,11 +33,15 @@ public class Application {
             log.error("Github repo does not contain any folders in '{}' directory. Exiting...", MIGRATION_DIRECTORY);
             return;
         }
-        boolean success = application.createMigrationOutputFoldersIfDontExist(migrationFolders);
-        if (!success) {
-            log.error("Github repo does not contain any folders in '{}' directory. Exiting...", MIGRATION_DIRECTORY);
+
+        try {
+
+            application.createMigrationOutputFoldersIfDontExist(migrationFolders);
+        } catch (Throwable e) {
+            log.error("Unable to create ouput directories"); //TODO vylepsit
             return;
         }
+
 
         for (File migrationFolder : migrationFolders) {
             Migration migration;
@@ -77,18 +81,15 @@ public class Application {
         }
     }
 
-    private boolean createMigrationOutputFoldersIfDontExist(File[] migrationFolders) {
+    private void createMigrationOutputFoldersIfDontExist(File[] migrationFolders) {
         log.debug("creating migration output folder if don't exists");
-        boolean result = true;
         for (File folder : migrationFolders) {
             boolean success = new File(GITHUB_REPO_LOCAL_FOLDER
                     + separator
                     + MIGRATION_OUTPUT_DIRECTORY
-                    +separator
+                    + separator
                     + folder.getName()).mkdirs();
-            result = result && success;
         }
-        return result;
     }
 
 
