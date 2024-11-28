@@ -1,7 +1,7 @@
 package com.jabub;
 
 import java.io.File;
-import java.lang.reflect.Array;
+import java.nio.file.Path;
 import java.util.regex.Pattern;
 
 import static com.jabub.EnvVar.*;
@@ -32,5 +32,14 @@ public class Utils {
                 + serviceName
                 + separator
                 + VERSION_FILE_NAME);
+    }
+
+    public static String extractVersion(Path script) {
+        String fileName = script.getFileName().toString();
+        if (fileName.startsWith("v")) {
+            return fileName.substring(1, fileName.indexOf("_"));
+        } else {
+            return fileName.substring(0, fileName.indexOf("_"));
+        }
     }
 }

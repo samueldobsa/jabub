@@ -71,7 +71,18 @@ public class Application {
             Path lastExecutedScript = null;
             for (Path script : migration.getAllScriptsSorted()) {
                 if (migration.isHigher(script, lastExecutedVersion)) {
-                    migration.executeScript(script);
+                    try {
+                        int exitCode = migration.executeScript(script);
+
+                        if (exitCode != 0) {
+                            log.error("'{}' returned non-zero value: '{}'. See Error logs...", script.toAbsolutePath(), exitCode);
+                            break;
+                        }
+
+                    } catch (IOException | InterruptedException e) {
+                        log.error("There was error executing script: '{}'. See Error logs...", script.toAbsolutePath());
+                        throw new RuntimeException(e);
+                    }
                     lastExecutedScript = script;
                 } else {
                     log.debug("Skipping script {}", script.getFileName());
@@ -84,7 +95,7 @@ public class Application {
     private void createMigrationOutputFoldersIfDontExist(File[] migrationFolders) {
         log.debug("creating migration output folder if don't exists");
         for (File folder : migrationFolders) {
-            boolean success = new File(GITHUB_REPO_LOCAL_FOLDER
+            boolean success = new File(GITHUB_REPO_LOCAL_FOLDER //TODO if it's false it exists
                     + separator
                     + MIGRATION_OUTPUT_DIRECTORY
                     + separator

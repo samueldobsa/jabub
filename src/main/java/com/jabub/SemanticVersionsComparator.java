@@ -1,25 +1,28 @@
 package com.jabub;
 
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+
+import static com.jabub.Utils.extractVersion;
+import static java.lang.Math.max;
+import static java.util.Arrays.stream;
 
 public class SemanticVersionsComparator implements Comparator<Path> {
 
     @Override
     public int compare(Path o1, Path o2) {
-        String version1 = o1.getFileName().toString().substring(1, o1.getFileName().toString().indexOf("_"));
-        String version2 = o2.getFileName().toString().substring(1, o2.getFileName().toString().indexOf("_"));
+        String version1 = extractVersion(o1);
+        String version2 = extractVersion(o2);
 
-        List<Integer> version1Components = Arrays.stream(version1.split("\\."))
+        List<Integer> version1Components = stream(version1.split("\\."))
                 .map(Integer::parseInt)
                 .toList();
-        List<Integer> version2Components = Arrays.stream(version2.split("\\."))
+        List<Integer> version2Components = stream(version2.split("\\."))
                 .map(Integer::parseInt)
                 .toList();
 
-        int maxLength = Math.max(version1Components.size(), version2Components.size());
+        int maxLength = max(version1Components.size(), version2Components.size());
 
         for (int i = 0; i < maxLength; i++) {
             int v1Component = i < version1Components.size() ? version1Components.get(i) : 0;
@@ -34,8 +37,8 @@ public class SemanticVersionsComparator implements Comparator<Path> {
         return 0;
     }
 
-    boolean isHigher(Path script, String version){
-        return this.compare(script, Path.of(version+"_")) > 0; //TODO check hack
+    boolean isHigher(Path script, String version) {
+        return this.compare(script, Path.of(version + "_")) > 0;
     }
 }
 

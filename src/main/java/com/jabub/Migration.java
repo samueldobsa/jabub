@@ -4,7 +4,6 @@ import com.jabub.exception.MixedVersionsException;
 import com.jabub.exception.NoScriptsException;
 import com.jabub.exception.ScriptHasIncorrectName;
 import com.jabub.exception.VersionPropertyFileNotCreated;
-import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,9 +16,9 @@ import java.util.List;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-import static com.jabub.EnvVar.SEMANTIC_VERSION_PREFIX;
-import static com.jabub.Utils.getVersionPropertiesFile;
-import static com.jabub.Utils.hasCorrectFormat;
+import static com.jabub.EnvVar.*;
+import static com.jabub.Utils.*;
+import static java.lang.ProcessBuilder.Redirect.to;
 import static java.nio.file.Files.walk;
 import static java.util.stream.Collectors.toList;
 import static lombok.AccessLevel.PRIVATE;
@@ -89,14 +88,16 @@ public class Migration {
         return numberedVersioned.isEmpty();
     }
 
-    public void executeScript(Path script) {
-        log.info("Executing script: {}", script.getFileName());
-    }
+    public int executeScript(Path script) throws IOException, InterruptedException {
+        String scriptPath = script.toAbsolutePath().toString();
+        ProcessBuilder processBuilder = new ProcessBuilder(scriptPath);
+        String logFilePath = scriptPath.replace(MIGRATION_DIRECTORY.toString(), MIGRATION_OUTPUT_DIRECTORY.toString());
+        processBuilder.redirectOutput(to(new File(logFilePath + ".stdout")));
+        processBuilder.redirectError(to(new File(logFilePath + ".stderr")));
+        Process process = processBuilder.start();
 
-    public void updateVersion(Path lastExecutedScript) {
-        //TODO
+        return process.waitFor();
     }
-
 
     public List<Path> getAllScriptsSorted() {
         if (scripts.getFirst().getFileName().toString().startsWith(SEMANTIC_VERSION_PREFIX.toString())) {
@@ -107,18 +108,23 @@ public class Migration {
         return scripts;
     }
 
-    public String getLastExecutedVersion() {
-        String initialVersion = semanticVersioned ? "v0.0.0" : "0";
-        return versionProperties.getProperty("version", initialVersion);
-    }
-
     public boolean isHigher(Path script, String lastExecutedVersion) {
 
         if (this.semanticVersioned) {
             return semanticVersionsComparator.isHigher(script, lastExecutedVersion);
         } else {
             return numberVersionsComparator.isHigher(script, lastExecutedVersion);
+        }
+    }
 
+    public String getLastExecutedVersion() {
+        String initialVersion = semanticVersioned ? "v0.0.0" : "0";
+        return versionProperties.getProperty("version", initialVersion);
+    }
+
+    public void updateVersion(Path lastExecutedScript) {
+        if (lastExecutedScript != null) {
+            versionProperties.setProperty("version", extractVersion(lastExecutedScript));
         }
     }
 }
