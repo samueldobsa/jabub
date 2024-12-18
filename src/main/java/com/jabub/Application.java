@@ -13,6 +13,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 
 import static com.jabub.EnvVar.*;
@@ -25,6 +26,12 @@ public class Application {
 
     public static void main(String[] args) {
 
+        // get absolute way of the PATH
+        Path basePath = Paths.get(EnvVar.GITHUB_REPO_LOCAL_FOLDER.toString());
+        Path scriptPath = basePath.resolve("MIGRATION/service-A/v1.1.2_ScriptPython");
+
+        System.out.println("Script path: " + scriptPath.toAbsolutePath());
+        //
         Application application = new Application();
         application.cloneOrUpdateGithubRepo();
 

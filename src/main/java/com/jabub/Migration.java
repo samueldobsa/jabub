@@ -90,14 +90,65 @@ public class Migration {
 
     public int executeScript(Path script) throws IOException, InterruptedException {
         String scriptPath = script.toAbsolutePath().toString();
-        ProcessBuilder processBuilder = new ProcessBuilder(scriptPath);
-        String logFilePath = scriptPath.replace(MIGRATION_DIRECTORY.toString(), MIGRATION_OUTPUT_DIRECTORY.toString());
-        processBuilder.redirectOutput(to(new File(logFilePath + ".stdout")));
-        processBuilder.redirectError(to(new File(logFilePath + ".stderr")));
-        Process process = processBuilder.start();
 
+        ProcessBuilder processBuilder;
+
+        if (scriptPath.endsWith(".py")) {
+            processBuilder = new ProcessBuilder("python3", scriptPath);
+        } else if (scriptPath.endsWith(".sh")) {
+            processBuilder = new ProcessBuilder("bash", scriptPath);
+        } else if (scriptPath.endsWith(".js")) {
+            processBuilder = new ProcessBuilder("node", scriptPath);
+        } else if (scriptPath.endsWith(".java")) {
+            String className = script.getFileName().toString().replace(".java", "");
+            Path parentDir = script.getParent();
+
+            // Compilation of Java file
+            ProcessBuilder compileProcess = new ProcessBuilder("javac", scriptPath);
+            compileProcess.directory(parentDir.toFile());
+            compileProcess.inheritIO();
+            Process compile = compileProcess.start();
+            if (compile.waitFor() != 0) {
+                throw new IOException("Failed to compile Java file: " + scriptPath);
+            }
+
+            // Running a Java file
+            processBuilder = new ProcessBuilder("java", "-cp", parentDir.toString(), className);
+        } else {
+            // check the first line (shebang) for scripts without the extension
+            try (Stream<String> lines = Files.lines(script)) {
+                String firstLine = lines.findFirst().orElse("");
+                if (firstLine.startsWith("#!/usr/bin/env python3")) {
+                    processBuilder = new ProcessBuilder("python3", scriptPath);
+                } else if (firstLine.startsWith("#!/bin/bash")) {
+                    processBuilder = new ProcessBuilder("bash", scriptPath);
+                } else if (firstLine.startsWith("#!/usr/bin/env node")) {
+                    processBuilder = new ProcessBuilder("node", scriptPath);
+                } else {
+                    throw new IOException("Unsupported script type: " + scriptPath);
+                }
+            }
+        }
+
+        // Logs settings
+        String logFilePath = scriptPath.replace(MIGRATION_DIRECTORY.toString(), MIGRATION_OUTPUT_DIRECTORY.toString());
+        File logFile = new File(logFilePath + ".stdout");
+        File errorFile = new File(logFilePath + ".stderr");
+
+        // If file exist for log
+        File parentDir = logFile.getParentFile();
+        if (!parentDir.exists() && !parentDir.mkdirs()) {
+            throw new IOException("Failed to create directories for logs: " + parentDir.getAbsolutePath());
+        }
+
+        processBuilder.redirectOutput(to(logFile));
+        processBuilder.redirectError(to(errorFile));
+
+        // Executed script
+        Process process = processBuilder.start();
         return process.waitFor();
     }
+
 
     public List<Path> getAllScriptsSorted() {
         if (scripts.getFirst().getFileName().toString().startsWith(SEMANTIC_VERSION_PREFIX.toString())) {
