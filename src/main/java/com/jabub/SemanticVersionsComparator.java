@@ -22,6 +22,7 @@ public class SemanticVersionsComparator implements Comparator<Path> {
         return this.compare(script, Path.of(version + "_")) > 0;
     }
 
+    //Compare and split versions
     private int compereVersions(String version1, String version2) {
         String[] v1Parts = version1.split("\\.");
         String[] v2Parts = version2.split("\\.");

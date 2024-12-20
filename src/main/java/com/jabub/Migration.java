@@ -88,6 +88,7 @@ public class Migration {
         return numberedVersioned.isEmpty();
     }
 
+    // Making execute script from users more flexible
     public int executeScript(Path script) throws IOException, InterruptedException {
         String scriptPath = script.toAbsolutePath().toString();
 

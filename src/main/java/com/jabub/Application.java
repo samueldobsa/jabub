@@ -27,6 +27,7 @@ public class Application {
     public static void main(String[] args) {
 
         // get absolute way of the PATH
+        // just test
         Path basePath = Paths.get(EnvVar.GITHUB_REPO_LOCAL_FOLDER.toString());
         Path scriptPath = basePath.resolve("MIGRATION/service-A/v1.1.2_ScriptPython");
 

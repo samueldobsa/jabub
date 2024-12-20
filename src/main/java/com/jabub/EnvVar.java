@@ -3,6 +3,7 @@ package com.jabub;
 import static java.lang.System.getenv;
 
 public enum EnvVar {
+    // It will be work like this? I think that user must add their repo?
     GITHUB_REPO_LOCAL_FOLDER("/Users/samueldobsa/IdeaProjects/jabub-test-repo-second"),
     GITHUB_REPO_REMOTE_URL("https://github.com/samueldobsa/jabub-test-repo-second.git"),
     MIGRATION_DIRECTORY("MIGRATION"),
